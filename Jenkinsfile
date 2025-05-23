@@ -4,14 +4,16 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'cargo-pro-courier-system-php'
         DOCKER_TAG = 'latest'
+        CONTAINER_NAME = 'cargo-pro-container'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Dheeraj060598/cargo-pro-courier-system.git'
+                git branch: 'main', url: 'https://github.com/Dheeraj060598/cargo-pro-courier-system.git'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -19,20 +21,19 @@ pipeline {
                 }
             }
         }
-        stage('Run Docker Container') {
+
+        stage('Stop Previous Container') {
             steps {
                 script {
-                    // Run the Docker container in detached mode
-                    sh 'docker run -d -p 80:80 --name cargo-pro-container ${DOCKER_IMAGE}:${DOCKER_TAG}'
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
                 }
             }
         }
-        stage('Clean Up') {
+
+        stage('Run Docker Container') {
             steps {
                 script {
-                    // Optional: Clean up containers and images
-                    sh 'docker rm -f cargo-pro-container || true'
-                    sh 'docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true'
+                    sh "docker run -d --name ${CONTAINER_NAME} -p 80:80 ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
         }
@@ -40,10 +41,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build and deployment succeeded!'
+            echo '✅ Application deployed successfully on EC2!'
         }
         failure {
-            echo 'Build or deployment failed.'
+            echo '❌ Deployment failed. Check logs.'
         }
     }
 }
